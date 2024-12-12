@@ -1,0 +1,14 @@
+Week 14 Program #2: Final Project Pseudocode
+
+In main function:
+  Connect to database, get cursor, and add table.
+  Call function that actually does stuff.
+
+In function that actually does stuff:
+  Get rid of table if it already exists, and create the table.
+  There will be a database with at least seven fields.
+  In loop:
+    Display the data in the database, and give the user an option to choose which item they'd like to edit.
+    Ask the user if they'd like to edit anymore information. If yes, re-iterate loop. If no, continue.
+
+  Display final contents of the database.
