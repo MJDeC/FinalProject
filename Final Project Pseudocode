@@ -1,10 +1,10 @@
 Week 14 Program #2: Final Project Pseudocode
 
-In main function:
+In the main function:
   Connect to database, get cursor, and add table.
   Call function that actually does stuff.
 
-In function that actually does stuff:
+In the function that actually does stuff:
   Get rid of table if it already exists, and create the table.
   There will be a database with at least seven fields.
   In loop:
