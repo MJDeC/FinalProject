@@ -43,9 +43,11 @@ def info_table(cursor):
         query = f"UPDATE Info SET {column_name} = %s WHERE id = %s"
         cursor.execute(query, (replacement, row_id))
         connection.commit()
+        #prints updated database contents
         print("Success! Info database has been updated. Here are the new contents:")
         for row in cursor.execute("select * from info"):
             print(row)
+        #prompts user to continue or not
         cont=input("Enter y if you would like to continue editing. Else, press another key.")
         #except sqlite3.Error:
             #print("There was an error updating the database. Please try again!")
