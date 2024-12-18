@@ -30,13 +30,36 @@ def info_table(cursor):
     cursor.executemany("insert into info values (?,?,?,?,?,?,?)", info_rows)
 
     #print contents of database
-    print("Here are the current contents of the database:")
+    print("Here are the current contents of the database to be edited from:")
+    for row in cursor.execute("select * from info"):
+        print(row)
+    #get user input for editing purposes
+    cont = 'y'
+    if cont =='y':
+        row_id = input("Enter the ID of the row to edit:")
+        column_name = input("Enter the name of the column you would like to edit from:")
+        replacement = input("Enter the value you would like to add:")
+        #sql query
+        query = f"UPDATE Info SET {column_name} = %s WHERE id = %s"
+        cursor.execute(query, (replacement, row_id))
+        connection.commit()
+        print("Success! Info database has been updated. Here are the new contents:")
+        for row in cursor.execute("select * from info"):
+            print(row)
+        cont=input("Enter y if you would like to continue editing. Else, press another key.")
+        #except sqlite3.Error:
+            #print("There was an error updating the database. Please try again!")
+            #cont = input("Press y to continue editing, or else press another key to quit.")
+    else:
+        print("Thank you for updating the database! Here are the final contents:")
+        for row in cursor.execute("select * from info"):
+            print(row)
+        
+    
 
     # for row in cursor.execute('''SELECT Info.IDNum, Info.Name, YearLookup.YearName, Info.Email, Info.PhoneNum, Info.Address, Info.GPA FROM YearLookup, Info WHERE YearLookup.IDNum == Info.YearNum'''):
     #     print(row)
 
-    for row in cursor.execute("select * from info"):
-        print(row)
 
 if __name__ == '__main__':
     main()
