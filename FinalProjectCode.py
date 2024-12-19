@@ -11,12 +11,18 @@ class DBInterface:
         self.cur = None
         self.data_list = None
         self.columns_list = None
+        self.help_msg = ('Choose operation from following:\n\n    "read" to read the contents of the entire table\n'
+        '    "add" to add a new row\n    "edit" to edit a row\n    "delete" to delete a row\n    "exit" to exit program'
+        '\n    "help" for a list of commands\n    "reset" to reset table contents to sample data')
         self.loop_run = False
         self.choice = None
 
         # Connect to database.
         self.conn = sqlite3.connect(self.database)
         self.cur = self.conn.cursor()
+        self.cur.execute(
+        '''CREATE TABLE IF NOT EXISTS Info (IDNum INTEGER PRIMARY KEY NOT NULL, Name TEXT, Year TEXT, Email TEXT, PhoneNum TEXT, Address 
+        TEXT, GPA DECIMAL)''')
 
         # Start main input loop.
         self.run_inp_loop()
@@ -38,9 +44,7 @@ class DBInterface:
 
             # Check to see if loop has already run; if not, display list of commands.
             if not self.loop_run:
-                print('Choose operation from following:\n\n    "read" to read the contents of the entire table\n'
-                      '    "add" to add a new row\n    "edit" to edit a row\n    "delete" to delete a row\n    "exit" '
-                      'to exit program\n    "help" for a list of commands')
+                print(self.help_msg)
                 self.loop_run = True
 
             # Get input and perform the corresponding command.
@@ -71,8 +75,9 @@ class DBInterface:
         for row in self.cur.execute(f'''SELECT * FROM {self.table}'''):
             display = []
             for ind in range(len(self.columns_list)):
-                display.append(str(self.columns_list[ind][0]) + ': ' + str(row[ind]))
-            print('; '.join(display))
+                display.append(f'{self.columns_list[ind][0]}: {str(row[ind])}')
+            print(';   '.join(display))
+        print('End of data.')
 
     def add_row(self):
         while True:
@@ -192,36 +197,36 @@ class DBInterface:
                 inp = str(row_id)
             except (ValueError, UnboundLocalError):
                 print('Please select a valid ID.')
-            # Delete row.
-            self.cur.execute(f'''DELETE FROM {self.table} WHERE {self.columns_list[0][0]} == ?''', str(row_id))
-            print('Contact deleted successfully.')
-            break
-
-    def show_help(self):
-        print('Possible commands:\n\n    "read" to read the contents of the entire table\n    "add" to add a new '
-              'row\n    "edit" to edit a row\n    "delete" to delete a row\n    "exit" to exit program\n    "help" '
-              'for a list of commands')
+            else:
+                # Delete row.
+                self.cur.execute(f'''DELETE FROM {self.table} WHERE {self.columns_list[0][0]} == ?''', str(row_id))
+                print('Contact deleted successfully.')
+                break
 
     def reset(self):
         # if table exists, drop it
         self.cur.execute('DROP TABLE IF EXISTS Info')
         # create table
         self.cur.execute(
-            '''CREATE TABLE Info (IDNum INTEGER PRIMARY KEY NOT NULL, Name TEXT, YearID, Email TEXT, PhoneNum TEXT, 
-            Address TEXT, GPA DECIMAL, FOREIGN KEY(YearID) REFERENCES YearLookup(YearID))''')
+        '''CREATE TABLE Info (IDNum INTEGER PRIMARY KEY NOT NULL, Name TEXT, Year TEXT, Email TEXT, PhoneNum TEXT, Address 
+        TEXT, GPA DECIMAL)''')
         # add rows to table
         info_rows = [(1, 'Glu Tton', 'Freshman', 'glutton.free@college.edu', '612-648-8420',
                       'McDonald\'s, 1480 85th Ave N, Brooklyn Park, MN 55444', 3.7),
                      (2, 'Guill Otine', 'Junior', 'frenchrev1789@college.edu', '763-501-6629',
                       'Palais Bourbon, 126 Rue de l\'Université, 75007 Paris, France', 2.8),
-                     (3, 'Pedalto Themedal', 'Sophomore', 'gottagofast@college.edu', '612-295-4398',
-                      'Sumitomo Fudosan Osaki Garden Tower 9F, 1-1-1 Nishi-Shinagawa, Shinagawa-ku, Tokyo 141-0033, Japan',
+                     (3, 'Pedalto Themedal', 'Sophomore', 'gottagofast@college.edu', '612-295-4398', 'Sumitomo Fudosan '
+                     'Osaki Garden Tower 9F, 1-1-1 Nishi-Shinagawa, Shinagawa-ku, Tokyo 141-0033, Japan',
                       3.3),
                      (4, 'Badprog Rammer', 'Senior', 'whoneedscomments@college.edu', '952-254-8163',
                       'One Apple Park Way, Cupertino, CA 95014', 1.9),
                      (5, 'Sadn Ess', 'Sophomore', 'icanteven@college.edu', '763-892-5678',
                       '1200 Grand Central Ave, Glendale, CA 91201', 3.1)]
         self.cur.executemany("insert into info values (?,?,?,?,?,?,?)", info_rows)
+        print(f'Table {self.table} reset.')
+
+    def show_help(self):
+        print(self.help_msg)
 
 def exit_sequence():
 
