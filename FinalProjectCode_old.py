@@ -28,12 +28,12 @@ class DBInterface:
         self.cur.execute(self.table_query)
 
         # Start main input loop.
-        self.run_main_loop()
+        self.run_inp_loop()
 
         # Close database connection.
         self.conn.close()
 
-    def run_main_loop(self):
+    def run_inp_loop(self):
         while True:
 
             # Create a list holding contents of table (used for input validation).
@@ -46,9 +46,6 @@ class DBInterface:
             self.columns_list = []
             for row in data.description:
                 self.columns_list.append(row)
-
-            # Create a variable to hold the right number of SQL parameter placeholders, based on number of columns.
-            self.params = ', ?' * (len(self.columns_list) - 1)
 
             # Check to see if loop has already run; if not, display list of commands.
             if not self.loop_run:
@@ -88,17 +85,13 @@ class DBInterface:
         print('End of data.')
 
     def add_row(self):
-
-        # Set update flag. Once this equals True, input loop terminates.
-        inp_valid = False
-
-        # Input loop for getting row ID.
-        while not inp_valid:
+        while True:
 
             # Get max value in ID column and set ID for new row to that plus 1.
             for row_id in self.cur.execute(f'''SELECT MAX({self.columns_list[0][0]}) FROM {self.table}'''):
                 row_id = int(row_id[0]) + 1
             row = [row_id]
+            self.params = ', ?' * (len(self.columns_list) - 1)
 
             # Get input data for each column.
             for column in self.columns_list:
@@ -108,47 +101,45 @@ class DBInterface:
                         break
                     row.append(inp)
             if inp.lower() == 'exit':
-                inp_valid = True
-                continue
+                break
 
             # Add row to table.
             self.cur.execute(f'''INSERT INTO {self.table} VALUES (?{self.params})''', row)
             print('Row added successfully.')
-            inp_valid = True
+            break
 
     def edit_row(self):
 
         # Set update flag. Once this equals True, input loop terminates.
-        inp_valid = False
+        updated = False
 
         # Input loop for getting row ID.
-        while not inp_valid:
+        while True:
             inp = input('Enter the ID of the row you would like to modify; alternatively, enter "exit" to cancel: ')
             if inp.lower() == 'exit':
-                inp_valid = True
-                continue
+                break
 
             # Verify that input both is an integer and is the ID (primary key) of an existing row.
             try:
                 for row in self.data_list:
                     if int(inp) == row[0]:
                         id_sel = int(inp)
-                        inp_valid = True
+                        break
                 inp = str(id_sel)
 
             # If input is invalid, ask the user for new input.
             except (ValueError, UnboundLocalError):
                 print('Please select a valid ID.')
-        inp_valid = False
+            else:
+                break
 
         # Input loop for getting attribute to modify. Once valid ID has been taken from user, program asks the user
         # which specific attribute (or all attributes) in the row they would like to modify.
-        while not inp_valid:
+        while not inp.lower() == 'exit':
             inp = input('Enter the attribute of the row you would like to modify, or "all" for entire row; '
                         'alternatively, enter "exit" to cancel: ')
             if inp.lower() == 'exit':
-                inp_valid = True
-                continue
+                break
 
             # Change all attributes in row, if requested by user.
             if inp.lower() == 'all':
@@ -160,13 +151,11 @@ class DBInterface:
                     if not column == self.columns_list[0]:
                         inp = input(f'Enter into column {column[0]}: ')
                         if inp.lower() == 'exit':
-                            inp_valid = True
                             break
                         columns_sel.append(column[0])
                         values_sel.append(inp)
-
-                if inp_valid:
-                    continue
+                if inp.lower() == 'exit':
+                    break
 
                 # Update attributes in table.
                 for ind in range(len(columns_sel)):
@@ -174,7 +163,7 @@ class DBInterface:
                         f'''UPDATE {self.table} SET {columns_sel[ind]} = ? WHERE {self.columns_list[0][0]} == ?''',
                         (values_sel[ind], id_sel))
                 print('Row updated successfully.')
-                inp_valid = True
+                updated = True
 
             # Change specific attribute in row, or if no valid attribute is given, restart loop.
             else:
@@ -182,39 +171,37 @@ class DBInterface:
                 # Check if input is equal to an existing column.
                 for column in self.columns_list:
                     if (inp.lower() == column[0].lower() and not column == self.columns_list[0][
-                        0] and not inp.lower() == 'exit'):
+                        0] and not inp.lower()
+                                   == 'exit'):
                         inp = input(f'Enter into column {column[0]}: ')
                         if inp.lower() == 'exit':
-                            inp_valid = True
                             break
                         self.cur.execute(
                             f'''UPDATE {self.table} SET {column[0]} = ? WHERE {self.columns_list[0][0]} == ?''',
                             (inp, id_sel))
                         print('Row updated successfully.')
-                        inp_valid = True
+                        updated = True
 
-                # If input doesn't match any column, ask user for valid input.
-                if not inp_valid:
-                    print('Please select a valid attribute.')
+            # If row has been updated, or if user wants to cancel the operation, return user to main input loop.
+            if updated or inp.lower() == 'exit':
+                break
+
+            # If input doesn't match any column, ask user for valid input.
+            print('Please select a valid attribute.')
 
     def delete_row(self):
 
-        # Set update flag. Once this equals True, input loop terminates.
-        inp_valid = False
-
         # Input loop for getting row ID.
-        while not inp_valid:
+        while True:
             inp = input('Enter the ID of the row you would like to delete; alternatively, enter "exit" to cancel: ')
             if inp.lower() == 'exit':
-                inp_valid = True
-                continue
+                break
 
             # Verify that input both is an integer and is the ID (primary key) of an existing row.
             try:
                 for row in self.data_list:
                     if int(inp) == row[0]:
                         row_id = int(inp)
-                        inp_valid = True
                         break
                 inp = str(row_id)
             except (ValueError, UnboundLocalError):
@@ -224,6 +211,7 @@ class DBInterface:
                 # Delete row.
                 self.cur.execute(f'''DELETE FROM {self.table} WHERE {self.columns_list[0][0]} == ?''', str(row_id))
                 print('Contact deleted successfully.')
+                break
 
     def reset(self):
 
